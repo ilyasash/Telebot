@@ -2,7 +2,7 @@ import os
 from Crypto.Cipher import AES
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-TOKEN = '5865372117:AAFRnrHzl5qwPM-3E1z0hjo9GIdboHNBca8'
+TOKEN = 'YOUR_TOKEN_BOT'
 
 # Fungsi enkripsi teks menggunakan AES
 def encrypt_text(key, plaintext):
