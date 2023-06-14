@@ -1,4 +1,4 @@
-## Progress Telegram bot
+## Telegram bot 
 
 Kelompok 10 :
 1.Adimasdefatra Bimasena (Ketua)	5027211040 
@@ -9,4 +9,4 @@ Kelompok 10 :
 
 4.Yoga Hartono	5027211023
 
-Rencana : Membuat sebuah program dengan basis telebot  yang dapat meng encrypt dan decrypt text serta sebuah file
+Aplikasi  : Membuat sebuah program sederhana dengan basis telebot menggunakan algoritma AES  yang dapat meng encrypt dan decrypt text serta sebuah file
