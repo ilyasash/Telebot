@@ -1,7 +1,7 @@
 import telebot  
 import math
 import random
-import binascii
+import binasci
 
 # Inisialisasi bot Telegram
 bot = telebot.TeleBot('6064228219:AAHJXDLMv_8o6SRe4cmWP7oyVlCyUassIMg')
