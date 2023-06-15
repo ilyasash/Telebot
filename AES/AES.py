@@ -2,6 +2,7 @@ import os
 from Crypto.Cipher import AES
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
+#masukan token dari bot yang telah di buat
 TOKEN = 'YOUR_TOKEN_BOT'
 
 # Fungsi enkripsi teks menggunakan AES
