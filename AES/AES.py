@@ -155,3 +155,7 @@ updater.dispatcher.add_handler(MessageHandler(Filters.document, receive_file))
 # Jalankan bot
 updater.start_polling()
 updater.idle()
+
+
+
+
