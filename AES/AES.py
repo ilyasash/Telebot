@@ -1,9 +1,11 @@
 import os
 from Crypto.Cipher import AES
+from cryptography.fernet import Fernet, InvalidToken
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import base64
 
 #masukan token dari bot yang telah di buat
-TOKEN = 'YOUR_TOKEN_BOT'
+token = "Your-Bot-Token"
 
 # Fungsi enkripsi teks menggunakan AES
 def encrypt_text(key, plaintext):
@@ -77,7 +79,7 @@ def receive_file(update, context):
 
 # Handler command /start
 def start(update, context):
-    message = "Halo! Selamat datang di Bot Kriptografi.\n\n"
+    message = "Halo! Selamat datang di Bot Kriptografi AES.\n\n"
     message += "Berikut adalah daftar fungsi yang dapat digunakan:\n"
     message += "/encrypt <plaintext> : Enkripsi teks menggunakan AES.\n"
     message += "/decrypt <ciphertext> : Dekripsi teks menggunakan AES.\n"
@@ -85,15 +87,52 @@ def start(update, context):
     message += "/decryptfile : Dekripsi file menggunakan AES."
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
+#generate 32 huruf/kata
+def adjust_length(text, desired_length=32):
+    if len(text) < desired_length:
+        # Menambahkan duplikat kata atau angka hingga mencapai panjang yang diinginkan
+        text = (text * (desired_length // len(text) + 1))[:desired_length]
+    elif len(text) > desired_length:
+        # Memotong kata atau angka hingga mencapai panjang yang diinginkan
+        text = text[:desired_length]
+    
+    return text
+
+
+# Handler command /key
+def key (update, context):
+    plaintext = context.user_data.get('plaintext')
+    if plaintext == None:
+        message = "Masukkan kata yang akan di enkripsi terlebih dahulu.\n\n"
+        message += "Formatnya adalah /encrypt <plaintext>\n"
+        context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+        return
+    if len(context.args) < 1:
+        message = "Masukkan kata kunci.\n\n"
+        message += "Formatnya adalah /key <keyword>\n"
+        context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+        return
+    key = context.args[0]
+    key_word = adjust_length(key)  # 
+    key_bytes = key_word.encode()  # Mengubah kunci menjadi bytes
+    key_base64 = base64.urlsafe_b64encode(key_bytes)  # Mengubah kunci menjadi base64 yang aman untuk URL
+    cipher = Fernet(key_base64)
+    ciphertext = cipher.encrypt(plaintext.encode())
+    message = "Teks berhasil dienkripsi.\n\n"
+    # message += "Key: " + key + "\n\n"
+    message += "Ciphertext: " + ciphertext.hex()
+    context.user_data['plaintext'] = None
+    context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+
 # Handler command /encrypt
 def encrypt(update, context):
     plaintext = ' '.join(context.args)
-    key = os.urandom(32)
-    ciphertext = encrypt_text(key, plaintext)
-    message = "Teks berhasil dienkripsi.\n\n"
-    message += "Key: " + key.hex() + "\n\n"
-    message += "Ciphertext: " + ciphertext.hex()
+    context.user_data['plaintext'] = plaintext
+    # key = context.args[1]
+    message = "Selanjutnya masukkan kata kunci sebagai encryptor.\n\n"
+    message += "Formatnya adalah /key <keyword>\n"
     context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+
 
 # Handler command /decrypt
 def decrypt(update, context):
@@ -102,13 +141,21 @@ def decrypt(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text=message)
         return
 
-    ciphertext = bytes.fromhex(context.args[0])
-    key = bytes.fromhex(context.args[1])
-    plaintext = decrypt_text(key, ciphertext)
-    message = "Teks berhasil didekripsi.\n\n"
-    message += "Plaintext: " + plaintext
-    context.bot.send_message(chat_id=update.effective_chat.id, text=message)
-
+    ciphertext = context.args[0]
+    key = context.args[1]  # Menggunakan string kunci
+    key_word = adjust_length(key)
+    key_bytes = base64.urlsafe_b64encode(key_word.encode())  # Mengubah kunci menjadi base64 yang aman untuk URL
+    cipher = Fernet(key_bytes)
+    try:
+        plaintext = cipher.decrypt(bytes.fromhex(ciphertext)).decode()
+        message = "Teks berhasil didekripsi.\n\n"
+        # message += "Key: " + key + "\n\n"
+        message += "Plaintext: " + plaintext
+        context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+    except InvalidToken:
+        message = "Dekripsi gagal karena kunci tidak valid."
+        context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+        
 # Handler command /encryptfile
 def encryptfile(update, context):
     if 'received_file' not in context.user_data:
@@ -142,20 +189,22 @@ def decryptfile(update, context):
     os.remove(out_filename)  # Hapus file hasil dekripsi setelah dikirim
 
 # Inisialisasi updater
-updater = Updater(token=TOKEN, use_context=True)
+updater = Updater(token, use_context=True)
 
 # Daftarkan handler
 updater.dispatcher.add_handler(CommandHandler('start', start))
 updater.dispatcher.add_handler(CommandHandler('encrypt', encrypt))
+updater.dispatcher.add_handler(CommandHandler('key', key))
 updater.dispatcher.add_handler(CommandHandler('decrypt', decrypt))
 updater.dispatcher.add_handler(CommandHandler('encryptfile', encryptfile))
 updater.dispatcher.add_handler(CommandHandler('decryptfile', decryptfile))
+# updater.dispatcher.add_handler(MessageHandler(filters.document, receive_file))
 updater.dispatcher.add_handler(MessageHandler(Filters.document, receive_file))
+
 
 # Jalankan bot
 updater.start_polling()
 updater.idle()
-
 
 
 
